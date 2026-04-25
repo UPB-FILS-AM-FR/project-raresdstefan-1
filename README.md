@@ -42,18 +42,7 @@ Le monoxyde de carbone est un gaz incolore, inodore et très toxique, souvent ap
 
 ## Journal de bord (Log)
 
-### Semaine du 6 au 12 Mai
-* Recherche des composants nécessaires et documentation sur le fonctionnement du capteur MQ-7.
-* Achat du matériel et premier test du capteur pour lire les valeurs analogiques sur le moniteur série.
 
-### Semaine du 13 au 19 Mai
-* Câblage du module Bluetooth HC-05.
-* Création du pont diviseur de tension (avec les résistances 1kΩ et 2kΩ) pour protéger la broche RX du Bluetooth (qui fonctionne en 3.3V).
-* Test de la communication entre l'Arduino et l'application mobile Android (Serial Bluetooth Terminal).
-
-### Semaine du 20 au 26 Mai
-* Intégration complète du code : lecture des données du MQ-7, conversion et envoi continu via Bluetooth.
-* Réalisation des schémas électriques finaux et écriture de la documentation (README).
 
 ## Liens de référence
 
