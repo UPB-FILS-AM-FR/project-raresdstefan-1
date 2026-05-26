@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+pika
+requests
+faker
+python-dotenv
+
+# PostgreSQL async
+sqlalchemy[asyncio]>=2.0
+asyncpg
+greenlet
+
+# Serial (pentru modul USB cu ESP32)
+pyserial
