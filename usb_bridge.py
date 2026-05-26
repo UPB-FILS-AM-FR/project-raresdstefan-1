@@ -7,7 +7,7 @@ import time
 SERIAL_PORT = 'COM3'  
 BAUD_RATE = 115200
 # Endpoint-ul FastAPI din Docker
-BACKEND_URL = 'http://localhost:8000/predict/ingest' 
+BACKEND_URL = 'http://localhost:8000/sensor/ingest' 
 def start_bridge():
     try:
         # Ne conectam la cablul USB

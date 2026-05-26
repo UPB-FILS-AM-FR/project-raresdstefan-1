@@ -21,10 +21,9 @@ from sqlalchemy import select, desc
 
 from app.services.sensor_service import generate_fake_sensor_data
 from app.database import get_session, SensorReading
-
+LATEST_ESP32_DATA = None
 logger = logging.getLogger("routes")
 router = APIRouter()
-LATEST_ESP32_DATA = None
 
 ML_SERVICE_URL = os.getenv("ML_SERVICE_URL", "http://ml-service:8001")
 
@@ -32,21 +31,19 @@ ML_SERVICE_URL = os.getenv("ML_SERVICE_URL", "http://ml-service:8001")
 # ── Schema pentru datele trimise de ESP32 ──────────────────────────────────
 
 class ESP32Payload(BaseModel):
-    """
-    Structura JSON pe care ESP32-ul tău o trimite prin HTTP POST.
-    Toate câmpurile sunt opționale — dacă lipsesc, rămân NULL în DB.
-    """
     field_id:    Optional[str]   = "field-001"
-    # Senzor lumină (TSL2561)
     luminosity:  Optional[float] = None
-    # Senzor sol 7-in-1 (Modbus)
     humidity:    Optional[float] = None
     temperature: Optional[float] = None
-    ec:          Optional[float] = None   # Conductivitate — în Arduino e "Conductivitate"
     ph:          Optional[float] = None
-    nitrogen:    Optional[float] = None   # N
-    phosphorus:  Optional[float] = None   # P
-    potassium:   Optional[float] = None   # K
+    N:           Optional[float] = None
+    P:           Optional[float] = None
+    K:           Optional[float] = None
+    EC:          Optional[float] = None
+    nitrogen:    Optional[float] = None
+    phosphorus:  Optional[float] = None
+    potassium:   Optional[float] = None
+    ec:          Optional[float] = None
 
 
 # ── Helper: apel ML service ───────────────────────────────────────────────
@@ -118,35 +115,7 @@ async def _save_reading(
 # ENDPOINT-URI
 # ══════════════════════════════════════════════════════════════════════════
 
-@router.get("/sensor/live")
-def get_live_data():
-    """Returnează o citire simulată (fără ML, fără DB)."""
-    return generate_fake_sensor_data()
 
-
-@router.post("/sensor/ingest")
-async def ingest_esp32_data(
-    payload: ESP32Payload,
-    db: AsyncSession = Depends(get_session)
-):
-    global LATEST_ESP32_DATA # <--- Declarăm variabila globală
-    sensor_dict = payload.dict()
-    
-    # Salvăm în memorie pentru frontend
-    LATEST_ESP32_DATA = sensor_dict 
-    
-    # Salvăm în PostgreSQL
-    reading = await _save_reading(db, sensor_dict, source="esp32")
-    return {"status": "saved", "id": reading.id}
-
-@router.get("/sensor/live")
-def get_live_data():
-    global LATEST_ESP32_DATA
-    # Dacă avem date reale de la ESP32, returnăm acele date
-    if LATEST_ESP32_DATA:
-        return LATEST_ESP32_DATA
-    # Altfel, returnăm simulare
-    return generate_fake_sensor_data()
 
 
 @router.get("/sensor/history")
@@ -189,3 +158,58 @@ async def get_history(
         }
         for r in readings
     ]
+
+@router.post("/sensor/ingest")
+async def ingest_esp32_data(payload: ESP32Payload, db: AsyncSession = Depends(get_session)):
+    sensor_dict = payload.dict()
+
+    # Normalizează: N→nitrogen, P→phosphorus, K→potassium, EC→ec
+    sensor_dict["nitrogen"]   = sensor_dict.get("N")   or sensor_dict.get("nitrogen")
+    sensor_dict["phosphorus"] = sensor_dict.get("P")   or sensor_dict.get("phosphorus")
+    sensor_dict["potassium"]  = sensor_dict.get("K")   or sensor_dict.get("potassium")
+    sensor_dict["ec"]         = sensor_dict.get("EC")  or sensor_dict.get("ec")
+
+    reading = await _save_reading(db, sensor_dict, source="esp32")
+    return {"status": "saved", "id": reading.id}
+
+@router.get("/sensor/live")
+def get_live_data():
+    return generate_fake_sensor_data()
+
+
+@router.get("/predict/live")
+async def predict_live(db: AsyncSession = Depends(get_session)):
+    stmt = (
+        select(SensorReading)
+        .where(SensorReading.source == "esp32")
+        .order_by(desc(SensorReading.timestamp))
+        .limit(1)
+    )
+    result = await db.execute(stmt)
+    last_esp32 = result.scalar_one_or_none()
+
+    if last_esp32:
+        sensor_data = {
+            "field_id":    last_esp32.field_id,
+            "luminosity":  last_esp32.luminosity,
+            "N":           last_esp32.nitrogen,
+            "P":           last_esp32.phosphorus,
+            "K":           last_esp32.potassium,
+            "ph":          last_esp32.ph,
+            "EC":          last_esp32.ec,
+            "humidity":    last_esp32.humidity,
+            "temperature": last_esp32.temperature,
+        }
+        source = "esp32"
+    else:
+        sensor_data = generate_fake_sensor_data()
+        source = "simulated"
+
+    prediction = _call_ml(sensor_data)
+    reading = await _save_reading(db, sensor_data, prediction, source=source)
+
+    return {
+        "sensor_data": sensor_data,
+        "prediction":  prediction,
+        "db_id":       reading.id,
+    }
