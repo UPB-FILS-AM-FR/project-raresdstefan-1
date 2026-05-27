@@ -9,7 +9,6 @@
  *   - Serial (USB) — pentru debugging și modul "serial" din backend
  *   - HTTP POST la backend TerraGuard — pentru modul "http" din backend
  *
- * CONFIGURARE: editează secțiunea "USER CONFIG" de mai jos.
  */
 
 #include <Arduino.h>
