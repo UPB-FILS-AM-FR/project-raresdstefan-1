@@ -22,16 +22,14 @@
 #include <ArduinoJson.h>
 
 // ═══════════════════════════════════════════════════════════════
-// USER CONFIG — modifică aceste valori
+// USER CONFIG 
 // ═══════════════════════════════════════════════════════════════
 
 // WiFi
-const char* WIFI_SSID     = "NumeleReteleiTale";
-const char* WIFI_PASSWORD = "ParolaWifi";
+const char* WIFI_SSID     = "";
+const char* WIFI_PASSWORD = "";
 
-// Backend TerraGuard
-// Dacă rulezi Docker pe același PC: http://IP_PC:8000/sensor/ingest
-// Dacă vrei și predicție ML: http://IP_PC:8000/predict/ingest
+// Backend TerraGuar
 const char* BACKEND_URL   = "http://192.168.1.100:8000/sensor/ingest";
 
 // Identificator câmp
