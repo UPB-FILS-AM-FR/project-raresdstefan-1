@@ -22,7 +22,7 @@ La qualité du sol est un facteur déterminant pour la réussite des cultures, m
 
 ### Schéma électrique (Schematic)
 
-> 📁 `schematics/schematic.png` *(à ajouter)*
+(sensors/esp32/Capture d'écran 2026-05-27 131552.png)
 
 ## Composants
 
